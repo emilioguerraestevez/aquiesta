@@ -64,6 +64,13 @@ input:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(0,23,191,.15);bac
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 button{margin-top:20px;width:100%;font-family:inherit;font-size:17px;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:.05em;color:#fff;background:var(--rojo);border:0;border-radius:999px;padding:16px;cursor:pointer;-webkit-appearance:none;box-shadow:0 6px 16px rgba(254,0,0,.3)}
 button:disabled{opacity:.6;cursor:default}
+.priv{margin-top:10px;font-size:12px;color:var(--mute);line-height:1.5}
+.priv summary{cursor:pointer;font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:11px;color:var(--azul);padding:4px 0;list-style:none}
+.priv summary::-webkit-details-marker{display:none}
+.priv summary::after{content:' +'}
+.priv[open] summary::after{content:' –'}
+.priv div{padding:6px 0 2px}
+.priv p{margin:0 0 8px}
 .msg{margin-top:12px;font-size:14px;font-weight:600;color:var(--err);line-height:1.4}
 .note{font-size:12px;color:var(--mute);line-height:1.5;margin-top:14px}
 .ok{display:none;text-align:center;padding:26px 6px 14px}
@@ -127,7 +134,16 @@ button:disabled{opacity:.6;cursor:default}
       <div class="hp" aria-hidden="true"><label>No llenar<input type="text" name="web" tabindex="-1" autocomplete="off"></label></div>
       <button id="go" type="submit">Confirmar registro</button>
       <div class="msg" id="msg" role="alert"></div>
-      <p class="note">Tus datos se usan únicamente para confirmar tu asistencia y enviarte información del informe.</p>
+      <p class="note">Los datos personales que proporcionas se utilizarán únicamente con fines de organización y seguimiento, para la adecuada planeación y ejecución del Informe de Actividades, conforme a lo señalado por la legislación aplicable.</p>
+      <details class="priv">
+        <summary>Aviso de privacidad</summary>
+        <div>
+          <p><b>Responsable.</b> Alcaldía Cuauhtémoc, Ciudad de México.</p>
+          <p><b>Datos que se recaban.</b> Nombre, correo electrónico, teléfono celular y, de manera opcional, colonia o institución.</p>
+          <p><b>Finalidades.</b> Registrar y confirmar tu asistencia; enviarte información y actualizaciones del evento (sede, horario o cambios); organizar y planear la logística del informe; y darle seguimiento. Tus datos no se utilizarán para finalidades distintas a las señaladas.</p>
+          <p><b>Tus derechos.</b> Puedes ejercer tus derechos de acceso, rectificación, cancelación y oposición (ARCO) ante la Unidad de Transparencia de la Alcaldía Cuauhtémoc, conforme a la Ley de Protección de Datos Personales en Posesión de Sujetos Obligados de la Ciudad de México.</p>
+        </div>
+      </details>
     </div>
     <div class="ok" id="ok" role="status">
       <div class="tick">✓</div>
