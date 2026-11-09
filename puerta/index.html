@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>Puerta · Escaneo de accesos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../vip/vip.css">
+</head><body>
+<main class="wrap">
+<h1><span class="cb">[</span> Puerta <span class="cb">]</span></h1>
+
+<section id="login">
+ <p class="mut">Escaneo de accesos de invitados especiales.</p>
+ <form id="f-login"><input type="password" id="clave" placeholder="Clave de la puerta" autocomplete="off" autocapitalize="characters"><button class="btn">Entrar</button></form>
+ <div id="l-err" class="err oculto">Clave incorrecta.</div>
+</section>
+
+<section id="app" class="oculto">
+ <div class="visor"><video id="video" playsinline muted></video></div>
+ <p class="mut" id="estado" style="text-align:center">Apunta la cámara al código QR.</p>
+ <div id="res" class="oculto"></div>
+ <form id="f-man" class="card"><h2>¿No lee? Escribe el código</h2><input type="text" id="man" placeholder="AQ-XXXXXXXXXX" autocomplete="off" autocapitalize="characters"><button class="btn">Verificar</button></form>
+</section>
+</main>
+<canvas id="cv" class="oculto"></canvas>
+<script src="../vip/jsqr.js"></script><script src="../vip/vip.js"></script>
+<script>
+var K = leer('puK'), ULT = '', ULT_T = 0, STREAM = null, OCUPADO = false;
+function mostrar(r) {
+  var d = $('res'), t = { valido: 'Adelante', usado: 'Ya entró', invalido: 'Código inválido', cancelado: 'Cancelado' }[r.r] || 'Error';
+  d.className = 'res ' + (r.r || 'invalido');
+  d.innerHTML = '<b class="t">' + t + '</b>' + (r.nombre ? '<div class="nm">' + esc(r.nombre) + '</div><div class="cg">' + esc(r.tipo || '') + (r.cargo ? '<br>' + esc(r.cargo) : '') +
+    (r.cuando ? '<br>Entró: ' + esc(r.cuando) : '') + '</div>' : '<div class="cg">Este código no corresponde a ningún acceso.</div>');
+  if (navigator.vibrate) navigator.vibrate(r.r === 'valido' ? 80 : [120, 80, 120]);
+  window.scrollTo(0, 0);
+}
+function verificar(c) {
+  OCUPADO = true; $('estado').textContent = 'Verificando…';
+  return api({ a: 'scan', k: K, c: c }).then(function (r) {
+    if (!r.ok && r.e === 'clave') { sessionStorage.removeItem('puK'); location.reload(); return; }
+    if (!r.ok) throw 0; mostrar(r); $('estado').textContent = 'Apunta la cámara al siguiente código.';
+  }).catch(function () { mostrar({ r: 'error' }); $('estado').textContent = 'Sin conexión. Reintenta.'; ULT = ''; })
+    .then(function () { OCUPADO = false; });
+}
+function ciclo() {
+  var v = $('video');
+  if (!OCUPADO && v.readyState >= 2) {
+    var cv = $('cv'), w = v.videoWidth, h = v.videoHeight, s = Math.min(1, 640 / w); cv.width = Math.round(w * s); cv.height = Math.round(h * s);
+    var g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(v, 0, 0, cv.width, cv.height);
+    var q = jsQR(g.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, { inversionAttempts: 'dontInvert' });
+    if (q && /^AQ-[A-Z0-9]{10}$/.test(q.data.trim().toUpperCase())) {
+      var c = q.data.trim().toUpperCase();
+      if (c !== ULT || Date.now() - ULT_T > 5000) { ULT = c; ULT_T = Date.now(); $('res').classList.remove('oculto'); verificar(c); }
+    }
+  }
+  setTimeout(ciclo, 140);
+}
+function camara() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('estado').textContent = 'Este navegador no abre la cámara: escribe el código a mano.'; return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then(function (s) {
+    STREAM = s; var v = $('video'); v.srcObject = s; v.play(); ciclo();
+  }).catch(function () { $('estado').textContent = 'No se pudo abrir la cámara (revisa el permiso). Puedes escribir el código a mano.'; });
+}
+function entrar() { $('login').classList.add('oculto'); $('app').classList.remove('oculto'); camara(); }
+$('f-login').onsubmit = function (ev) {
+  ev.preventDefault(); K = $('clave').value.trim().toUpperCase(); $('l-err').classList.add('oculto');
+  api({ a: 'scan', k: K, c: 'AQ-0000000000' }).then(function (r) { if (r.ok) { guardar('puK', K); entrar(); } else $('l-err').classList.remove('oculto'); })
+    .catch(function () { $('l-err').textContent = 'No se pudo conectar.'; $('l-err').classList.remove('oculto'); });
+};
+$('f-man').onsubmit = function (ev) { ev.preventDefault(); var c = $('man').value.trim().toUpperCase(); if (!c) return; $('res').classList.remove('oculto'); verificar(c); $('man').value = ''; };
+if (K) entrar();
+</script></body></html>

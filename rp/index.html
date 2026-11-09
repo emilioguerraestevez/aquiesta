@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>Panel de invitados · Relaciones Públicas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../vip/vip.css">
+</head><body>
+<main class="wrap ancho">
+<img class="logo" src="../alcaldia.png" alt="Alcaldía Cuauhtémoc">
+<h1><span class="cb">[</span> Invitados especiales <span class="cb">]</span></h1>
+
+<section id="login">
+ <p class="mut">Panel privado de la Comisión de Relaciones Públicas.</p>
+ <form id="f-login"><input type="password" id="clave" placeholder="Clave del panel" autocomplete="off" autocapitalize="characters"><button class="btn" style="max-width:320px">Entrar</button></form>
+ <div id="l-err" class="err oculto">Clave incorrecta.</div>
+</section>
+
+<section id="panel" class="oculto">
+ <div class="cifras" id="cifras"></div>
+ <div class="card">
+  <h2>Mensaje de WhatsApp</h2>
+  <p class="mut">Usa <b>{nombre}</b> y <b>{enlace}</b>: se sustituyen por los de cada invitado. Tu texto se guarda en este navegador.</p>
+  <textarea id="plantilla" class="msg"></textarea>
+ </div>
+ <div class="chips" id="chips"></div>
+ <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px"><input type="search" id="buscar" placeholder="Buscar por nombre o cargo"><select id="cat"></select></div>
+ <p class="mut" id="cuenta" style="margin-top:12px"></p>
+ <div id="lista"></div>
+ <p class="pie">Para que el botón de WhatsApp abra el chat directo, escribe el celular de 10 dígitos en la columna «Celular» de la hoja Invitados. Sin celular, usa «Copiar mensaje».</p>
+</section>
+</main>
+<script src="../vip/vip.js"></script>
+<script>
+var K = leer('rpK'), D = [], FILTRO = 'todos', SEDE = '';
+var PLANT = 'Estimado(a) {nombre}:\n\nLa alcaldesa Alessandra Rojo de la Vega tiene el honor de invitarle a su 2º Informe de Actividades, el sábado 16 de enero de 2027{sede}.\n\nPara confirmar su asistencia y recibir su acceso personal (incluye un acompañante), ingrese a su enlace:\n{enlace}\n\nAgradecemos de antemano su respuesta.\nComisión de Relaciones Públicas · Alcaldía Cuauhtémoc';
+try { PLANT = localStorage.getItem('rpPlantilla') || PLANT; } catch (e) {}
+$('plantilla').value = PLANT;
+$('plantilla').oninput = function () { try { localStorage.setItem('rpPlantilla', this.value); } catch (e) {} };
+
+function enlace(t) { return location.origin + '/invitado/?t=' + t; }
+function msg(x) { return $('plantilla').value.replace('{nombre}', x.nombre.replace(/\s*\(.*\)\s*$/, '')).replace('{sede}', SEDE ? ', ' + SEDE : '').replace('{enlace}', enlace(x.t)); }
+function estado(x) { return x.estado === 'confirmó' ? 'confirmo' : x.estado === 'declinó' ? 'declino' : x.visto ? 'visto' : 'pendiente'; }
+var ROT = { confirmo: 'Confirmó', declino: 'Declinó', visto: 'Abrió, sin responder', pendiente: 'Sin abrir' };
+
+function cargar(primera) {
+  return api({ a: 'panel', k: K }).then(function (r) {
+    if (!r.ok) { if (primera) { $('l-err').classList.remove('oculto'); } return; }
+    guardar('rpK', K); D = r.lista; SEDE = r.sede || ''; $('login').classList.add('oculto'); $('panel').classList.remove('oculto'); pintar();
+  }).catch(function () { if (primera) { $('l-err').textContent = 'No se pudo conectar.'; $('l-err').classList.remove('oculto'); } });
+}
+function pintar() {
+  var n = D.length, c = D.filter(function (x) { return x.estado === 'confirmó'; }), ac = c.filter(function (x) { return x.acomp; }).length;
+  var ent = D.reduce(function (s, x) { return s + (x.ent1 ? 1 : 0) + (x.ent2 ? 1 : 0); }, 0);
+  var cnt = { todos: n, pendiente: 0, visto: 0, confirmo: 0, declino: 0 }; D.forEach(function (x) { cnt[estado(x)]++; });
+  $('cifras').innerHTML = [['Invitados', n], ['Confirmaron', c.length], ['Acompañantes', ac], ['Asistentes esperados', c.length + ac], ['Declinaron', cnt.declino], ['Sin responder', cnt.pendiente + cnt.visto], ['Han entrado', ent]]
+    .map(function (a) { return '<div><b>' + a[1] + '</b><span>' + a[0] + '</span></div>'; }).join('');
+  $('chips').innerHTML = [['todos', 'Todos'], ['pendiente', 'Sin abrir'], ['visto', 'Abrió, sin responder'], ['confirmo', 'Confirmaron'], ['declino', 'Declinaron']]
+    .map(function (a) { return '<button class="chip' + (FILTRO === a[0] ? ' on' : '') + '" data-f="' + a[0] + '">' + a[1] + ' (' + cnt[a[0]] + ')</button>'; }).join('');
+  var cats = {}; D.forEach(function (x) { cats[x.cat] = 1; }); var sel = $('cat'), v = sel.value;
+  sel.innerHTML = '<option value="">Todas las categorías</option>' + Object.keys(cats).sort().map(function (k) { return '<option>' + esc(k) + '</option>'; }).join(''); sel.value = v;
+  var q = $('buscar').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  var L = D.filter(function (x) {
+    return (FILTRO === 'todos' || estado(x) === FILTRO) && (!sel.value || x.cat === sel.value) &&
+      (!q || (x.nombre + ' ' + x.cargo).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').indexOf(q) >= 0);
+  });
+  $('cuenta').textContent = L.length + ' de ' + n;
+  $('lista').innerHTML = L.map(function (x) {
+    var e = estado(x), i = D.indexOf(x);
+    var wa = x.cel && x.cel.length === 10 ? '<a class="btn peq" target="_blank" rel="noopener" href="https://wa.me/52' + x.cel + '?text=' + encodeURIComponent(msg(x)) + '">WhatsApp</a>' : '';
+    return '<div class="fila"><div><div class="nm">' + esc(x.nombre) + ' <small class="mut">' + esc(/^\d{1,4}$/.test(x.id) ? ('0000' + x.id).slice(-4) : x.id) + '</small></div><div class="cg">' + esc(x.cargo) + '</div></div>' +
+      '<span class="est ' + e + '">' + ROT[e] + '</span><div class="ac">' + wa +
+      '<button class="btn peq sec" data-m="' + i + '">Copiar mensaje</button><button class="btn peq sec" data-e="' + i + '">Copiar enlace</button>' +
+      (x.estado === 'confirmó' ? '<span class="mut" style="align-self:center;font-size:12.5px">' + (x.acomp ? 'Con acompañante' + (x.nacomp ? ': ' + esc(x.nacomp) : '') : 'Sin acompañante') + (x.ent1 || x.ent2 ? ' · entró ' + esc(x.ent1 || x.ent2) : '') + '</span>' : '') + '</div></div>';
+  }).join('');
+}
+function copiar(txt, btn) {
+  var ok = function () { var t = btn.textContent; btn.textContent = '¡Copiado!'; setTimeout(function () { btn.textContent = t; }, 1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, function () { prompt('Copia el texto:', txt); });
+  else { var a = document.createElement('textarea'); a.value = txt; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (e) {} a.remove(); }
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest('button'); if (!b) return;
+  if (b.dataset.f) { FILTRO = b.dataset.f; pintar(); }
+  if (b.dataset.m) copiar(msg(D[b.dataset.m]), b);
+  if (b.dataset.e) copiar(enlace(D[b.dataset.e].t), b);
+});
+$('buscar').oninput = $('cat').onchange = pintar; $('plantilla').addEventListener('input', pintar);
+$('f-login').onsubmit = function (ev) { ev.preventDefault(); K = $('clave').value.trim().toUpperCase(); $('l-err').classList.add('oculto'); cargar(true); };
+if (K) cargar(false);
+setInterval(function () { if (K && !$('panel').classList.contains('oculto') && document.activeElement.id !== 'plantilla') cargar(false); }, 60000);
+</script></body></html>

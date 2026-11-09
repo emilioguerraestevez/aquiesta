@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>Tu invitación · 2º Informe de Actividades</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../vip/vip.css">
+</head><body>
+<main class="wrap">
+<img class="logo" src="../alcaldia.png" alt="Alcaldía Cuauhtémoc">
+
+<section id="v-load"><p class="mut">Abriendo tu invitación…</p></section>
+
+<section id="v-bad" class="oculto">
+ <h1><span class="cb">[</span> Enlace no válido <span class="cb">]</span></h1>
+ <p>Este enlace no corresponde a ninguna invitación. Revisa que lo hayas copiado completo o pide uno nuevo a la Comisión de Relaciones Públicas de la Alcaldía Cuauhtémoc.</p>
+</section>
+
+<section id="v-ask" class="oculto">
+ <span class="k">Invitación personal</span>
+ <h1><span class="cb">[</span> Aquí <br>está <span class="cb">]</span></h1>
+ <p style="font-size:19px;font-weight:700">Hola, <span id="a-nom"></span>.</p>
+ <p>La alcaldesa <b>Alessandra Rojo de la Vega</b> te invita a su <b>2º Informe de Actividades</b>.</p>
+ <div class="card">
+  <div class="dato"><b>Fecha</b><span>Sábado 16 de enero de 2027</span></div>
+  <div class="dato"><b>Sede y hora</b><span id="a-sede">Arena México · Dr. Lavista 189, col. Doctores</span></div>
+ </div>
+ <div class="card">
+  <h2>¿Vienes acompañado?</h2>
+  <p class="mut">Tu invitación incluye un acompañante, con su propio código de acceso.</p>
+  <label class="ch"><input type="checkbox" id="a-ac"> Asistiré con un acompañante</label>
+  <div id="a-acbox" class="oculto"><input type="text" id="a-na" maxlength="80" placeholder="Nombre de tu acompañante (opcional)" autocomplete="off"></div>
+ </div>
+ <div id="a-err" class="err oculto">No pudimos guardar tu respuesta. Revisa tu conexión e inténtalo de nuevo.</div>
+ <button class="btn" id="a-si">Confirmar mi asistencia</button>
+ <button class="btn sec" id="a-no">No podré asistir</button>
+</section>
+
+<section id="v-ok" class="oculto">
+ <span class="k">Asistencia confirmada</span>
+ <h1><span class="cb">[</span> ¡Te esperamos! <span class="cb">]</span></h1>
+ <p>Gracias, <span id="o-nom"></span>. Este es tu acceso. <b>Guárdalo en tu celular</b> y preséntalo en la entrada.</p>
+ <div id="o-pases"></div>
+ <div class="card">
+  <div class="dato"><b>Fecha</b><span>Sábado 16 de enero de 2027</span></div>
+  <div class="dato"><b>Sede y hora</b><span id="o-sede"></span></div>
+ </div>
+ <a class="btn sec" id="o-mapa" target="_blank" rel="noopener">Cómo llegar</a>
+ <p class="mut">Cada código se usa una sola vez. Si tu acompañante llega por separado, puede mostrar el suyo.</p>
+ <button class="btn sec" id="o-mod">Modificar mi respuesta</button>
+</section>
+
+<section id="v-no" class="oculto">
+ <h1><span class="cb">[</span> Gracias por avisarnos <span class="cb">]</span></h1>
+ <p>Registramos que no podrás asistir. Si cambias de opinión, vuelve a abrir este mismo enlace y confirma.</p>
+ <button class="btn" id="n-volver">Quiero confirmar mi asistencia</button>
+</section>
+
+<p class="pie">Alcaldía Cuauhtémoc · Comisión de Relaciones Públicas · Invitación personal e intransferible.</p>
+</main>
+<script src="../vip/qr.js"></script><script src="../vip/vip.js"></script>
+<script>
+var T = new URLSearchParams(location.search).get('t') || '', EST = null;
+function ver(id) { ['v-load', 'v-bad', 'v-ask', 'v-ok', 'v-no'].forEach(function (v) { $(v).classList.toggle('oculto', v !== id); }); window.scrollTo(0, 0); }
+function primer(n) { return String(n).replace(/\s*\(.*\)\s*$/, '').trim(); }
+function sede(e) { return e.sede || 'Arena México · Dr. Lavista 189, col. Doctores'; }
+
+function pintar(e) {
+  EST = e;
+  $('a-nom').textContent = $('o-nom').textContent = primer(e.nombre);
+  $('a-sede').textContent = $('o-sede').textContent = sede(e);
+  if (e.mapa) { $('o-mapa').href = e.mapa; } else { $('o-mapa').classList.add('oculto'); }
+  if (e.estado === 'confirmó') return pintarOk(e);
+  if (e.estado === 'declinó') return ver('v-no');
+  ver('v-ask');
+}
+function pase(titulo, nombre, codigo, entro, nota) {
+  var d = document.createElement('div'); d.className = 'pase';
+  d.innerHTML = '<small>' + esc(titulo) + '</small><b class="n">' + esc(nombre) + '</b><canvas></canvas><code>' + esc(codigo) + '</code>' +
+    (entro ? '<span class="ent">✓ Entrada registrada</span>' : '') + (nota ? '<p class="nota">' + esc(nota) + '</p>' : '') +
+    '<button class="btn" type="button">Guardar imagen</button>';
+  dibujarQR(d.querySelector('canvas'), codigo, 560);
+  d.querySelector('button').onclick = function () { descargar(titulo, nombre, codigo); };
+  return d;
+}
+function pintarOk(e) {
+  var c = $('o-pases'); c.innerHTML = '';
+  c.appendChild(pase('Invitado', e.nombre, e.qr1, e.entro1));
+  if (e.acomp) c.appendChild(pase('Acompañante', e.nombreAcomp || 'Acompañante de ' + primer(e.nombre), e.qr2, e.entro2, e.nombreAcomp ? '' : 'Puedes agregar su nombre en «Modificar mi respuesta».'));
+  ver('v-ok');
+}
+// Imagen del pase para guardar o compartir (1080×1500).
+function descargar(titulo, nombre, codigo) {
+  var W = 1080, H = 1500, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var g = cv.getContext('2d');
+  var f = g.createLinearGradient(0, 0, W, H); f.addColorStop(0, '#060b5c'); f.addColorStop(1, '#0017bf'); g.fillStyle = f; g.fillRect(0, 0, W, H);
+  var b = g.createLinearGradient(0, 0, W, 0); b.addColorStop(0, '#ffa368'); b.addColorStop(1, '#ff4174'); g.fillStyle = b; g.fillRect(0, 0, W, 18);
+  g.fillStyle = '#fff'; g.textAlign = 'center';
+  g.font = '800 34px Montserrat,Arial,sans-serif'; g.fillText('2º INFORME DE ACTIVIDADES', W / 2, 130);
+  g.font = 'italic 900 78px Montserrat,Arial,sans-serif'; g.fillText('[ AQUÍ ESTÁ ]', W / 2, 235);
+  g.font = '600 30px Montserrat,Arial,sans-serif'; g.fillText('Sábado 16 de enero de 2027', W / 2, 300);
+  g.fillText(sede(EST).slice(0, 60), W / 2, 344);
+  g.fillStyle = '#fff'; g.beginPath(); g.roundRect ? g.roundRect(150, 400, 780, 880, 36) : g.rect(150, 400, 780, 880); g.fill();
+  var q = document.createElement('canvas'); dibujarQR(q, codigo, 640); g.drawImage(q, 220, 450, 640, 640);
+  g.fillStyle = '#0017bf'; g.font = '800 30px Montserrat,Arial,sans-serif'; g.fillText(titulo.toUpperCase(), W / 2, 1150);
+  g.fillStyle = '#101528'; g.font = '900 44px Montserrat,Arial,sans-serif'; g.fillText(nombre.slice(0, 34), W / 2, 1210);
+  g.font = '700 30px ui-monospace,Menlo,monospace'; g.fillText(codigo, W / 2, 1258);
+  g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '600 26px Montserrat,Arial,sans-serif';
+  g.fillText('Presenta este código en el acceso · se usa una sola vez', W / 2, 1360);
+  var a = document.createElement('a'); a.download = 'pase-informe-' + titulo.toLowerCase() + '.png'; a.href = cv.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
+}
+
+function enviar(params, btn) {
+  $('a-err').classList.add('oculto'); var txt = btn.textContent; btn.disabled = true; btn.textContent = 'Guardando…';
+  return api(params).then(function (r) { if (!r.ok) throw 0; pintar(r); }).catch(function () { $('a-err').classList.remove('oculto'); })
+    .then(function () { btn.disabled = false; btn.textContent = txt; });
+}
+$('a-ac').onchange = function () { $('a-acbox').classList.toggle('oculto', !this.checked); };
+$('a-si').onclick = function () { enviar({ a: 'conf', t: T, acomp: $('a-ac').checked ? '1' : '0', na: $('a-ac').checked ? $('a-na').value : '' }, this); };
+$('a-no').onclick = function () { enviar({ a: 'no', t: T }, this); };
+$('n-volver').onclick = function () { ver('v-ask'); };
+$('o-mod').onclick = function () {
+  $('a-ac').checked = !!EST.acomp; $('a-acbox').classList.toggle('oculto', !EST.acomp); $('a-na').value = EST.nombreAcomp || ''; ver('v-ask');
+};
+
+if (!/^[a-f0-9]{24}$/.test(T)) ver('v-bad');
+else api({ a: 'inv', t: T }).then(function (r) { if (!r.ok) return ver('v-bad'); pintar(r); }).catch(function () { $('v-load').innerHTML = '<p>No pudimos abrir tu invitación. Revisa tu conexión y vuelve a intentarlo.</p>'; });
+</script></body></html>
