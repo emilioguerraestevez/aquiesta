@@ -37,7 +37,7 @@ function mostrar(r) {
 }
 function verificar(c) {
   OCUPADO = true; $('estado').textContent = 'Verificando…';
-  return api({ a: 'scan', k: K, c: c }).then(function (r) {
+  return api({ a: 'scan', k: K, cod: c }).then(function (r) {
     if (!r.ok && r.e === 'clave') { sessionStorage.removeItem('puK'); location.reload(); return; }
     if (!r.ok) throw 0; mostrar(r); $('estado').textContent = 'Apunta la cámara al siguiente código.';
   }).catch(function () { mostrar({ r: 'error' }); $('estado').textContent = 'Sin conexión. Reintenta.'; ULT = ''; })
@@ -65,7 +65,7 @@ function camara() {
 function entrar() { $('login').classList.add('oculto'); $('app').classList.remove('oculto'); camara(); }
 $('f-login').onsubmit = function (ev) {
   ev.preventDefault(); K = $('clave').value.trim().toUpperCase(); $('l-err').classList.add('oculto');
-  api({ a: 'scan', k: K, c: 'AQ-0000000000' }).then(function (r) { if (r.ok) { guardar('puK', K); entrar(); } else $('l-err').classList.remove('oculto'); })
+  api({ a: 'scan', k: K, cod: 'AQ-0000000000' }).then(function (r) { if (r.ok) { guardar('puK', K); entrar(); } else $('l-err').classList.remove('oculto'); })
     .catch(function () { $('l-err').textContent = 'No se pudo conectar.'; $('l-err').classList.remove('oculto'); });
 };
 $('f-man').onsubmit = function (ev) { ev.preventDefault(); var c = $('man').value.trim().toUpperCase(); if (!c) return; $('res').classList.remove('oculto'); verificar(c); $('man').value = ''; };
