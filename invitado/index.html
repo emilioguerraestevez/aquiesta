@@ -114,6 +114,7 @@ function descargar(titulo, nombre, codigo) {
   g.font = '700 30px ui-monospace,Menlo,monospace'; g.fillText(codigo, W / 2, 1258);
   g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '600 26px Montserrat,Arial,sans-serif';
   g.fillText('Presenta este código en el acceso · se usa una sola vez', W / 2, 1360);
+  g.fillStyle = 'rgba(255,255,255,.5)'; g.font = '600 22px Montserrat,Arial,sans-serif'; g.fillText('POWERED WITH COSMOS.AI', W / 2, 1460);
   var a = document.createElement('a'); a.download = 'pase-informe-' + titulo.toLowerCase() + '.png'; a.href = cv.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
 }
 
