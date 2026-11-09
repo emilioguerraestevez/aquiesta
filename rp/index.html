@@ -31,7 +31,7 @@
  <p class="pie">Para que el botón de WhatsApp abra el chat directo, escribe el celular de 10 dígitos en la columna «Celular» de la hoja Invitados. Sin celular, usa «Copiar mensaje».</p>
 </section>
 </main>
-<script src="../vip/vip.js"></script>
+<script src="../vip/vip.js?v=3"></script>
 <script>
 var K = leer('rpK'), D = [], FILTRO = 'todos', SEDE = '';
 var PLANT = 'Estimado(a) {nombre}:\n\nLa alcaldesa Alessandra Rojo de la Vega tiene el honor de invitarle a su 2º Informe de Actividades, el sábado 16 de enero de 2027{sede}.\n\nPara confirmar su asistencia y recibir su acceso personal (incluye un acompañante), ingrese a su enlace:\n{enlace}\n\nAgradecemos de antemano su respuesta.\nComisión de Relaciones Públicas · Alcaldía Cuauhtémoc';
@@ -87,7 +87,7 @@ document.addEventListener('click', function (ev) {
   if (b.dataset.e) copiar(enlace(D[b.dataset.e].t), b);
 });
 $('buscar').oninput = $('cat').onchange = pintar; $('plantilla').addEventListener('input', pintar);
-$('f-login').onsubmit = function (ev) { ev.preventDefault(); K = $('clave').value.trim().toUpperCase(); $('l-err').classList.add('oculto'); cargar(true); };
+$('f-login').onsubmit = function (ev) { ev.preventDefault(); K = $('clave').value.replace(/[\u2010-\u2015\u2212]/g, '-').replace(/\s+/g, '').toUpperCase(); $('l-err').classList.add('oculto'); cargar(true); };
 if (K) cargar(false);
 setInterval(function () { if (K && !$('panel').classList.contains('oculto') && document.activeElement.id !== 'plantilla') cargar(false); }, 60000);
 </script></body></html>
